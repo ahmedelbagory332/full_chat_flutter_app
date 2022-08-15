@@ -5,9 +5,14 @@ import 'package:jiffy/jiffy.dart';
 import 'package:provider/provider.dart';
 
 import '../provider/my_provider.dart';
-class subTitleAppBar extends StatelessWidget {
-    subTitleAppBar({Key? key}) : super(key: key);
+class SubTitleAppBar extends StatefulWidget {
+    const SubTitleAppBar({Key? key}) : super(key: key);
 
+  @override
+  State<SubTitleAppBar> createState() => _SubTitleAppBarState();
+}
+
+class _SubTitleAppBarState extends State<SubTitleAppBar> {
    String userStatus = "";
 
   @override
@@ -21,7 +26,9 @@ class subTitleAppBar extends StatelessWidget {
         if(snapshot.data?.docs[0]["userStatus"]!=null){
             if(snapshot.data?.docs[0]["userStatus"] == "Online") {
               userStatus = snapshot.data?.docs[0]["userStatus"];
-            }else{
+            }else if(snapshot.data?.docs[0]["userStatus"] == "typing....") {
+              userStatus = snapshot.data?.docs[0]["userStatus"];
+            }else {
 
               userStatus = "last seen : ${Jiffy(
                   DateFormat('dd-MM-yyyy hh:mm a').format(DateTime

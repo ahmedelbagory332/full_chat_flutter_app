@@ -9,33 +9,27 @@ class NotificationMessage {
     data = json['data'] != null ? Data.fromJson(jsonDecode(json['data'])) : null;
   }
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    if (this.data != null) {
-      data['data'] = this.data!.toJson();
-    }
-    return data;
-  }
 }
 
 class Data {
   String? image;
   String? title;
   String? message;
+  String? peerUserId;
+  String? peeredEmail;
+  String? peeredName;
+  String? callType;
 
-  Data({this.image, this.title, this.message});
+  Data({this.image, this.title, this.message, this.peerUserId, this.peeredEmail, this.peeredName, this.callType});
 
   Data.fromJson(Map<String, dynamic> json) {
     image = json['image'];
     title = json['title'];
     message = json['message'];
+    peerUserId = json['peerUserId'];
+    peeredEmail = json['peeredEmail'];
+    peeredName = json['peeredName'];
+    callType = json['callType'];
   }
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['image'] = image;
-    data['title'] = title;
-    data['message'] = message;
-    return data;
-  }
 }

@@ -230,6 +230,8 @@ class _MessagesComposeState extends State<MessagesCompose> with WidgetsBindingOb
                     setState(() {
                       sendChatButton = false;
                     });
+                    FireBaseHelper().updateUserStatus("Online",Provider.of<MyProvider>(context,listen: false).auth.currentUser!.uid);
+
                   }
                   else{
                     final status = await Permission.microphone.request();
@@ -282,6 +284,7 @@ class _MessagesComposeState extends State<MessagesCompose> with WidgetsBindingOb
       );
     });
     uploadTask.whenComplete(() => {
+
       uploadingNotification(
           fileType,
           Provider.of<MyProvider>(context,listen: false).peerUserData!["name"],0, 0, false),

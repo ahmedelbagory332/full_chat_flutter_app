@@ -24,7 +24,7 @@ class Messages extends StatefulWidget {
 class _MessagesState extends State<Messages> {
 
 
-  Future<void> downloadFile(fileUrl,fileName,fileType) async {
+  Future<void> downloadFile(context,fileUrl,fileName,fileType) async {
     Directory? appDocDir = await getApplicationDocumentsDirectory();
     final status = await Permission.storage.request();
     if(status == PermissionStatus.granted) {
@@ -34,7 +34,7 @@ class _MessagesState extends State<Messages> {
           OpenFile.open("${appDocDir.path}/$fileName")
               : Dio().download(
             fileUrl, "${appDocDir.path}/$fileName", onReceiveProgress: (count, total) {
-            downloadingNotification(total, count, false);
+           downloadingNotification(total, count, false);
           },).whenComplete(() {
             downloadingNotification(0, 0, true);
           });
@@ -92,7 +92,7 @@ class _MessagesState extends State<Messages> {
                   return InkWell(
                      onTap: (){
                        if(snapshot.data!.docs[index]['msgType'].toString() == "document"||snapshot.data!.docs[index]['msgType'].toString() == "voice message"){
-                         downloadFile(snapshot.data!.docs[index]['message'].toString(),snapshot.data!.docs[index]['fileName'].toString(),snapshot.data!.docs[index]['msgType'].toString());
+                         downloadFile(context,snapshot.data!.docs[index]['message'].toString(),snapshot.data!.docs[index]['fileName'].toString(),snapshot.data!.docs[index]['msgType'].toString());
                        }
                      },
                     child: SenderMessageCard(
@@ -108,7 +108,7 @@ class _MessagesState extends State<Messages> {
                   return InkWell(
                     onTap: (){
                       if(snapshot.data!.docs[index]['msgType'].toString() == "document"||snapshot.data!.docs[index]['msgType'].toString() == "voice message"){
-                        downloadFile(snapshot.data!.docs[index]['message'].toString(),snapshot.data!.docs[index]['fileName'].toString(),snapshot.data!.docs[index]['msgType'].toString());
+                        downloadFile(context,snapshot.data!.docs[index]['message'].toString(),snapshot.data!.docs[index]['fileName'].toString(),snapshot.data!.docs[index]['msgType'].toString());
                       }
                     },
                     child: ReceiverMessageCard(

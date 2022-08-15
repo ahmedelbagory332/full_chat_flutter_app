@@ -1,13 +1,10 @@
 
 import 'dart:io';
-import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:full_chat_application/firebase_helper/model/notification_messages.dart';
 import 'package:full_chat_application/provider/my_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -207,4 +204,12 @@ class FireBaseHelper {
     return ref.putFile(file is File?file:File(file.runtimeType==FilePickerResult?file!.files.single.path:file.path));
 
   }
+
+  void updateCallStatus(BuildContext context,status) {
+    FirebaseFirestore.instance
+        .collection("users")
+        .doc(Provider.of<MyProvider>(context, listen: false).auth.currentUser!.uid)
+        .update({"chatWith":status});
+   }
+
 }

@@ -74,22 +74,35 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver{
           children: [
             Text(Provider.of<MyProvider>(context,listen: false).peerUserData!["name"],
                 style: const TextStyle(fontSize: 18.5, fontWeight: FontWeight.bold)),
-             subTitleAppBar(),
+             const SubTitleAppBar(),
           ],
         ),
 
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.videocam)),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.call)),
+          IconButton(onPressed: () {
+            notifyUserWithCall("Calling from ${Provider.of<MyProvider>(context,listen: false).auth.currentUser!.displayName}",
+              Provider.of<MyProvider>(context,listen: false).peerUserData!["email"],
+              Provider.of<MyProvider>(context,listen: false).peerUserData!["userId"],
+              Provider.of<MyProvider>(context,listen: false).peerUserData!["name"],
+              "video"
+            );
+            Navigator.pushNamed(context, 'video_call');
+          }, icon: const Icon(Icons.videocam)),
+          IconButton(onPressed: () {
+            notifyUserWithCall("Calling from ${Provider.of<MyProvider>(context,listen: false).auth.currentUser!.displayName}",
+                Provider.of<MyProvider>(context,listen: false).peerUserData!["email"],
+                Provider.of<MyProvider>(context,listen: false).peerUserData!["userId"],
+                Provider.of<MyProvider>(context,listen: false).peerUserData!["name"],
+                "audio"
+            );
+            Navigator.pushNamed(context, 'audio_call');
+          }, icon: const Icon(Icons.call)),
         ],
       ),
       body:Column(
         children:  const [
-          Expanded(
-            child: Messages(),
-          ),
+          Expanded(child: Messages(),),
            MessagesCompose(),
-
         ],
       )
 

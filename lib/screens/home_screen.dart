@@ -14,15 +14,39 @@ class HomeScreen extends StatefulWidget {
 }
 
 class HomeScreenState extends State<HomeScreen> {
+  late MyProvider _appProvider;
+
+
+  @override
+  void didChangeDependencies() {
+    _appProvider = Provider.of<MyProvider>(context, listen: false);
+    super.didChangeDependencies();
+  }
   @override
   void initState() {
+
+    // notificationsActionStreamSubscription = AwesomeNotifications().actionStream.listen((action) {
+    //   if(action.buttonKeyPressed == "Answer"){
+    //     getCallType().then((value) {
+    //       Get.off(CallScreen(value));
+    //
+    //     });
+    //   }else if(action.buttonKeyPressed == "Cancel"){
+    //     FireBaseHelper().updateCallStatus(_appProvider,"false");
+    //     cancelCall(_appProvider,"User cancel the call");
+    //
+    //   }
+    // });
     super.initState();
     getDeviceToken().then((value) {
       updateUserToken(Provider.of<MyProvider>(context, listen: false).auth.currentUser!.email, value);
     });
     onTokenRefresh(Provider.of<MyProvider>(context, listen: false).auth.currentUser!.email);
   }
-
+@override
+  void dispose() {
+  super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     return SafeArea(

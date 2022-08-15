@@ -56,6 +56,19 @@ void notifyUser(title,body,notifyTo,senderMail) async{
   });
   response = await dio.post('https://bego88.000webhostapp.com/bego/sendSinglePush.php', data: formData);
   print("Bego(notifyUser) ${response.data}");
-  print("Bego(notifyUser) $title \n$body \n$notifyTo \n$senderMail \n");
-
+}
+void notifyUserWithCall(body,notifyTo,peerUserId,peeredName,callType) async{
+  var dio = Dio();
+  Response response;
+  var formData = FormData.fromMap({
+    'title': "",
+    'message': body,
+    'email': notifyTo,
+    'peerUserId': peerUserId,
+    'peeredEmail': notifyTo,
+    'peeredName': peeredName,
+    'callType': callType,
+  });
+  response = await dio.post('https://bego88.000webhostapp.com/bego/sendSinglePushForCalling.php', data: formData);
+  print("Bego(notifyUserWithCall) ${response.data}");
 }

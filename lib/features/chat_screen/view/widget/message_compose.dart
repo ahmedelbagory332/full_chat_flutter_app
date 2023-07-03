@@ -172,11 +172,9 @@ class _MessagesComposeState extends State<MessagesCompose>
                                         final XFile? photo =
                                             await _picker.pickImage(
                                                 source: ImageSource.camera);
-                                        context
+                                        await context
                                             .read<ChatCubit>()
                                             .getReferenceFromStorage(photo, "");
-                                        context.read<ChatCubit>().uploadFile(
-                                            "", "image", state.reference!);
                                       } else {
                                         await Permission.storage.request();
                                       }

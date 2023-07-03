@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
@@ -26,7 +27,6 @@ class ChatCubit extends Cubit<ChatState> {
   late StreamSubscription _peeredUserStatusSubscription;
   late StreamSubscription _getMessagesSubscription;
   final _recorder = FlutterSoundRecorder();
-
   void sendChatButtonChanged(bool value) {
     emit(state.copyWith(sendChatButton: value));
   }
@@ -200,34 +200,41 @@ class ChatCubit extends Cubit<ChatState> {
     }
   }
 
-  void getReferenceFromStorage(file, voiceMessageName) async {
+  Future<void> getReferenceFromStorage(file, voiceMessageName) async {
     var getReferenceFromStorage = await chatRepo.getReferenceFromStorage(
         file, state.chatId, voiceMessageName);
     getReferenceFromStorage.fold((failure) {
       debugPrint("bego getReferenceFromStorage failure: ${failure.errMessage}");
     }, (reference) {
-      state.copyWith(reference: reference);
-      if (lookupMimeType(file.files.single.path.toString())!
-          .contains("video")) {
-        uploadFile("", "video", reference);
-      } else if (lookupMimeType(file.files.single.path.toString())!
-          .contains("application")) {
-        uploadFile(file.files.single.name, "document", reference);
-      } else if (lookupMimeType(file.files.single.path.toString())!
-          .contains("image")) {
-        uploadFile("", "image", reference);
-      } else if (lookupMimeType(file.files.single.path.toString())!
-          .contains("audio")) {
-        uploadFile(file.files.single.name, "audio", reference);
+      if (file.runtimeType == FilePickerResult) {
+        if (lookupMimeType(file.files.single.path.toString())!
+            .contains("video")) {
+          uploadFile("", "video", reference);
+        } else if (lookupMimeType(file.files.single.path.toString())!
+            .contains("application")) {
+          uploadFile(file.files.single.name, "document", reference);
+        } else if (lookupMimeType(file.files.single.path.toString())!
+            .contains("image")) {
+          uploadFile("", "image", reference);
+        } else if (lookupMimeType(file.files.single.path.toString())!
+            .contains("audio")) {
+          uploadFile(file.files.single.name, "audio", reference);
+        } else {
+          state.copyWith(status: ChatStatus.unsupported);
+        }
       } else {
-        state.copyWith(status: ChatStatus.unsupported);
+        uploadFile("", "image", reference);
       }
     });
   }
 
   void uploadFile(String fileName, String fileType, UploadTask uploadTask) {
+    debugPrint("bego uploadFile event: ${uploadTask.snapshot}");
+
     /// show notification to user
     uploadTask.snapshotEvents.listen((event) {
+      debugPrint("bego snapshotEvents event: ${event.totalBytes}");
+
       uploadingNotification(fileType, peerUserData["name"], event.totalBytes,
           event.bytesTransferred, true);
     });

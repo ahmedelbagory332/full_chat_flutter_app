@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:full_chat_application/Utils.dart';
+import 'package:full_chat_application/core/utils/app_utils.dart';
 import 'package:full_chat_application/core/widget/custom_loading_dialog.dart';
 import 'package:full_chat_application/features/home_screen/view/home_screen.dart';
 import 'package:full_chat_application/features/logIn/manager/sign_in_cubit.dart';
@@ -127,8 +127,7 @@ class LogIn extends StatelessWidget {
                             children: [
                               TextButton(
                                 onPressed: () {
-                                  Navigator.pushReplacementNamed(
-                                      context, 'register');
+                                  Get.offNamed("/register");
                                 },
                                 child: const Text(
                                   'Sign Up',

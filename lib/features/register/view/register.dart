@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:full_chat_application/Utils.dart';
+import 'package:full_chat_application/core/utils/app_utils.dart';
 import 'package:full_chat_application/core/widget/custom_loading_dialog.dart';
 import 'package:full_chat_application/features/logIn/view/logIn.dart';
 import 'package:full_chat_application/features/register/manager/sign_up_cubit.dart';

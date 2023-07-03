@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:full_chat_application/Utils.dart';
+import 'package:full_chat_application/core/utils/app_utils.dart';
 import 'package:full_chat_application/features/home_screen/view/widget/users_card.dart';
 import 'package:get/get.dart';
 
@@ -33,9 +33,9 @@ class Users extends StatelessWidget {
               Expanded(
                 child: BlocConsumer<UsersCubit, UsersState>(
                   listener: (BuildContext context, state) {
-                    // if (state.status == UsersStatus.navigateToChat) {
-                    //   Get.toNamed('/chat');
-                    // }
+                    if (state.status == UsersStatus.navigateToChat) {
+                      Get.toNamed('/chat');
+                    }
                   },
                   builder: (BuildContext context, state) {
                     switch (state.status) {
@@ -45,6 +45,10 @@ class Users extends StatelessWidget {
                         }
                         break;
                       case UsersStatus.initial:
+                        {
+                          context.read<UsersCubit>().getUsers();
+                        }
+                        break;
                       case UsersStatus.loading:
                         {
                           return const Center(
@@ -58,52 +62,46 @@ class Users extends StatelessWidget {
                         }
                         break;
                       case UsersStatus.success:
-                        {
-                          return ListView.builder(
-                              itemCount: state.users.length,
-                              scrollDirection: Axis.horizontal,
-                              itemBuilder: (BuildContext context, int index) {
-                                return Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: SizedBox(
-                                      width: 60,
-                                      child: InkWell(
-                                        onTap: () {
-                                          if (context
-                                                  .read<UsersCubit>()
-                                                  .getCurrentUser()!
-                                                  .uid ==
-                                              state.users[index]['userId']
-                                                  .toString()) {
-                                            buildShowSnackBar(context,
-                                                "You can't send message to yourself");
-                                          } else {
-                                            context
-                                                .read<UsersCubit>()
-                                                .usersClickListener(state
-                                                    .users[index]['userId']
-                                                    .toString());
-                                          }
-                                        },
-                                        child: UsersCard(context
-                                                    .read<UsersCubit>()
-                                                    .getCurrentUser()!
-                                                    .uid ==
-                                                state.users[index]['userId']
-                                                    .toString()
-                                            ? "You"
-                                            : state.users[index]['name']
-                                                .toString()),
-                                      ),
-                                    ));
-                              });
-                        }
+                        {}
                         break;
-                      default:
-                        return const SizedBox();
                     }
-                    // Add a default return statement to return a fallback widget
-                    return const SizedBox();
+                    return ListView.builder(
+                        itemCount: state.users.length,
+                        scrollDirection: Axis.horizontal,
+                        itemBuilder: (BuildContext context, int index) {
+                          return Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: SizedBox(
+                                width: 60,
+                                child: InkWell(
+                                  onTap: () {
+                                    if (context
+                                            .read<UsersCubit>()
+                                            .getCurrentUser()!
+                                            .uid ==
+                                        state.users[index]['userId']
+                                            .toString()) {
+                                      buildShowSnackBar(context,
+                                          "You can't send message to yourself");
+                                    } else {
+                                      context
+                                          .read<UsersCubit>()
+                                          .usersClickListener(state.users[index]
+                                                  ['userId']
+                                              .toString());
+                                    }
+                                  },
+                                  child: UsersCard(context
+                                              .read<UsersCubit>()
+                                              .getCurrentUser()!
+                                              .uid ==
+                                          state.users[index]['userId']
+                                              .toString()
+                                      ? "You"
+                                      : state.users[index]['name'].toString()),
+                                ),
+                              ));
+                        });
                   },
                 ),
               )

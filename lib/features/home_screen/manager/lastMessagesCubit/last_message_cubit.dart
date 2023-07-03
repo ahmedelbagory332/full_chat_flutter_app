@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../../../core/utils/failures.dart';
 import '../../data/repo/home_repo_impl.dart';
 import 'last_message_state.dart';
 
@@ -18,6 +19,8 @@ class LastMessagesCubit extends Cubit<LastMessagesState> {
   User? getCurrentUser() {
     return user.currentUser;
   }
+
+  QuerySnapshot<Map<String, dynamic>>? get peerUserData => state.peerUserData;
 
   @override
   Future<void> close() {
@@ -38,15 +41,40 @@ class LastMessagesCubit extends Cubit<LastMessagesState> {
     });
   }
 
-  Future<void> recentChatClickListener(
-      QueryDocumentSnapshot<Map<String, dynamic>> clickedUser) async {
-    var user = await homeRepo.recentChatClickListener(clickedUser);
-    user.fold((failure) {
-      emit(state.copyWith(failure: failure, status: LastMessagesStatus.error));
-    }, (peerUserData) async {
-      emit(state.copyWith(
-          status: LastMessagesStatus.navigateToChat,
-          peerUserData: peerUserData));
-    });
+  recentChatClickListener(
+      QueryDocumentSnapshot<Map<String, dynamic>> clickedUser) {
+    if (clickedUser['messageSenderId'].toString() == user.currentUser!.uid) {
+      try {
+        FirebaseFirestore.instance
+            .collection('users')
+            .where('userId',
+                isEqualTo: clickedUser['messageReceiverId'].toString())
+            .get()
+            .then((value) {
+          emit(state.copyWith(
+              status: LastMessagesStatus.navigateToChat, peerUserData: value));
+        });
+      } catch (e) {
+        emit(state.copyWith(
+            failure: ServerFailure("An error occurred: $e"),
+            status: LastMessagesStatus.error));
+      }
+    } else {
+      try {
+        FirebaseFirestore.instance
+            .collection('users')
+            .where('userId',
+                isEqualTo: clickedUser['messageSenderId'].toString())
+            .get()
+            .then((value) {
+          emit(state.copyWith(
+              status: LastMessagesStatus.navigateToChat, peerUserData: value));
+        });
+      } catch (e) {
+        emit(state.copyWith(
+            failure: ServerFailure("An error occurred: $e"),
+            status: LastMessagesStatus.error));
+      }
+    }
   }
 }

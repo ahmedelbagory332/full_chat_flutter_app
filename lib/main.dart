@@ -7,17 +7,19 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:full_chat_application/core/service_locator.dart';
+import 'package:full_chat_application/features/chat_screen/chat_screen.dart';
+import 'package:full_chat_application/features/chat_screen/manager/chat_cubit.dart';
 import 'package:full_chat_application/features/home_screen/view/home_screen.dart';
 import 'package:full_chat_application/features/logIn/manager/sign_in_cubit.dart';
 import 'package:full_chat_application/features/splash_screen/view/splash_screen.dart';
 import 'package:full_chat_application/provider/shared_preferences.dart';
 import 'package:full_chat_application/screens/audio_call_screen.dart';
 import 'package:full_chat_application/screens/call_screen.dart';
-import 'package:full_chat_application/screens/chat_screen.dart';
 import 'package:full_chat_application/screens/video_call_screen.dart';
 import 'package:get/get.dart';
 
-import 'Utils.dart';
+import 'core/utils/app_utils.dart';
+import 'features/chat_screen/data/repo/chat_repo_impl.dart';
 import 'features/home_screen/data/repo/home_repo_impl.dart';
 import 'features/home_screen/manager/homeCubit/home_cubit.dart';
 import 'features/home_screen/manager/lastMessagesCubit/last_message_cubit.dart';
@@ -125,6 +127,23 @@ class _MyAppState extends State<MyApp> {
                   getIt.get<HomeRepoImpl>(),
                   getIt.get<FirebaseAuth>(),
                 )..getLastMessages()),
+        BlocProvider(
+            create: (context) => ChatCubit(
+                  context.read<UsersCubit>().peerUserData == null
+                      ? context.read<LastMessagesCubit>().peerUserData!.docs[0]
+                      : context.read<UsersCubit>().peerUserData!.docs[0],
+                  getIt.get<ChatRepoImpl>(),
+                  getIt.get<FirebaseAuth>(),
+                )
+                  ..getMessages()
+                  ..getPeeredUserStatus(
+                      context.read<UsersCubit>().peerUserData == null
+                          ? context
+                              .read<LastMessagesCubit>()
+                              .peerUserData!
+                              .docs[0]["userId"]
+                          : context.read<UsersCubit>().peerUserData!.docs[0]
+                              ["userId"])),
       ],
       child: GetMaterialApp(
         debugShowCheckedModeBanner: false,

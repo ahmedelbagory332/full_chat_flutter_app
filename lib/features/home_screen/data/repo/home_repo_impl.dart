@@ -77,47 +77,4 @@ class HomeRepoImpl implements HomeRepo {
       yield left(ServerFailure("An error occurred: ${e.toString()}"));
     }
   }
-
-  @override
-  Future<Either<Failure, QuerySnapshot<Map<String, dynamic>>>>
-      usersClickListener(String userId) async {
-    try {
-      var user = await FirebaseFirestore.instance
-          .collection('users')
-          .where('userId', isEqualTo: userId)
-          .get();
-      return right(user);
-    } catch (e) {
-      return left(ServerFailure("An error occurred: $e"));
-    }
-  }
-
-  @override
-  Future<Either<Failure, QuerySnapshot<Map<String, dynamic>>>>
-      recentChatClickListener(
-          QueryDocumentSnapshot<Map<String, dynamic>> clickedUser) async {
-    if (clickedUser['messageSenderId'].toString() == user.currentUser!.uid) {
-      try {
-        var user = await FirebaseFirestore.instance
-            .collection('users')
-            .where('userId',
-                isEqualTo: clickedUser['messageReceiverId'].toString())
-            .get();
-        return right(user);
-      } catch (e) {
-        return left(ServerFailure("An error occurred: $e"));
-      }
-    } else {
-      try {
-        var user = await FirebaseFirestore.instance
-            .collection('users')
-            .where('userId',
-                isEqualTo: clickedUser['messageSenderId'].toString())
-            .get();
-        return right(user);
-      } catch (e) {
-        return left(ServerFailure("An error occurred: $e"));
-      }
-    }
-  }
 }

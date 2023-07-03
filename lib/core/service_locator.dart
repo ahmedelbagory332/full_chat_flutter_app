@@ -5,6 +5,7 @@ import 'package:full_chat_application/features/register/data/repo/sign_up_repo_i
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../features/chat_screen/data/repo/chat_repo_impl.dart';
 import '../features/home_screen/data/repo/home_repo_impl.dart';
 import '../features/logIn/data/repo/sign_in_repo_impl.dart';
 
@@ -22,6 +23,11 @@ Future<void> setupServiceLocator() async {
   getIt.registerLazySingleton(() => SignInRepoImpl(getIt.get<FirebaseAuth>()));
 
   getIt.registerLazySingleton(() => HomeRepoImpl(
+        getIt.get<ApiService>(),
+        getIt.get<FirebaseAuth>(),
+      ));
+
+  getIt.registerLazySingleton(() => ChatRepoImpl(
         getIt.get<ApiService>(),
         getIt.get<FirebaseAuth>(),
       ));

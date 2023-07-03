@@ -13,77 +13,77 @@ class RecentChats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: ClipRRect(
-          borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(5.0), topRight: Radius.circular(5.0)),
-          child: BlocConsumer<LastMessagesCubit, LastMessagesState>(
-            listener: (BuildContext context, state) {
-              // if (state.status == LastMessagesStatus.navigateToChat) {
-              //   Get.toNamed('/chat');
-              // }
-            },
-            builder: (context, state) {
-              switch (state.status) {
-                case LastMessagesStatus.navigateToChat:
-                  {
-                    Get.toNamed('/chat');
-                  }
-                  break;
-                case LastMessagesStatus.initial:
-                case LastMessagesStatus.loading:
-                  {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-                  break;
-                case LastMessagesStatus.error:
-                  {
-                    return Center(child: Text(state.failure.errMessage));
-                  }
-                  break;
-                case LastMessagesStatus.success:
-                  {
-                    return state.lastMessages.isEmpty
-                        ? const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Center(
-                                  child: Text(
-                                      'No messages start to chat with someone')),
-                            ],
-                          )
-                        : ListView.builder(
-                            itemCount: state.lastMessages.length,
-                            scrollDirection: Axis.vertical,
-                            itemBuilder: (BuildContext context, int index) {
-                              return InkWell(
-                                onTap: () {
+    return BlocConsumer<LastMessagesCubit, LastMessagesState>(
+      listener: (BuildContext context, state) {
+        if (state.status == LastMessagesStatus.navigateToChat) {
+          Get.toNamed('/chat');
+        }
+      },
+      builder: (context, state) {
+        switch (state.status) {
+          case LastMessagesStatus.navigateToChat:
+            {
+              Get.toNamed('/chat');
+            }
+            break;
+          case LastMessagesStatus.initial:
+            {
+              context.read<LastMessagesCubit>().getLastMessages();
+            }
+            break;
+          case LastMessagesStatus.loading:
+            {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+            break;
+          case LastMessagesStatus.error:
+            {
+              return Center(child: Text(state.failure.errMessage));
+            }
+            break;
+
+          case LastMessagesStatus.success:
+            break;
+        }
+        return Expanded(
+          child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(5.0),
+                  topRight: Radius.circular(5.0)),
+              child: state.lastMessages.isEmpty
+                  ? const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Center(
+                            child:
+                                Text('No messages start to chat with someone')),
+                      ],
+                    )
+                  : ListView.builder(
+                      itemCount: state.lastMessages.length,
+                      scrollDirection: Axis.vertical,
+                      itemBuilder: (BuildContext context, int index) {
+                        return InkWell(
+                          onTap: () {
+                            context
+                                .read<LastMessagesCubit>()
+                                .recentChatClickListener(
+                                    state.lastMessages[index]);
+                          },
+                          child: MessageTile(
+                              state.lastMessages[index],
+                              state.lastMessages[index]['messageSenderId']
+                                      .toString() ==
                                   context
                                       .read<LastMessagesCubit>()
-                                      .recentChatClickListener(
-                                          state.lastMessages[index]);
-                                },
-                                child: MessageTile(
-                                    state.lastMessages[index],
-                                    state.lastMessages[index]['messageSenderId']
-                                            .toString() ==
-                                        context
-                                            .read<LastMessagesCubit>()
-                                            .getCurrentUser()!
-                                            .uid),
-                              );
-                            });
-                  }
-                  break;
-                default:
-                  return const SizedBox();
-              }
-              // Add a default return statement to return a fallback widget
-              return const SizedBox();
-            },
-          )),
+                                      .getCurrentUser()!
+                                      .uid),
+                        );
+                      })),
+        );
+      },
     );
   }
 }

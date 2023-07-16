@@ -3,24 +3,26 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:full_chat_application/core/utils/app_utils.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/utils/failures.dart';
-import '../../data/repo/home_repo_impl.dart';
+import '../../data/repo/home_repo.dart';
 import 'last_message_state.dart';
 
 class LastMessagesCubit extends Cubit<LastMessagesState> {
-  LastMessagesCubit(this.homeRepo, this.user)
+  LastMessagesCubit(this.homeRepo, this.sharedPreferences, this.user)
       : super(LastMessagesState.initial());
 
-  final HomeRepoImpl homeRepo;
+  final HomeRepo homeRepo;
   final FirebaseAuth user;
+  final SharedPreferences sharedPreferences;
+
   late StreamSubscription _lastMessagesSubscription;
 
   User? getCurrentUser() {
     return user.currentUser;
   }
-
-  QuerySnapshot<Map<String, dynamic>>? get peerUserData => state.peerUserData;
 
   @override
   Future<void> close() {
@@ -51,8 +53,9 @@ class LastMessagesCubit extends Cubit<LastMessagesState> {
                 isEqualTo: clickedUser['messageReceiverId'].toString())
             .get()
             .then((value) {
-          emit(state.copyWith(
-              status: LastMessagesStatus.navigateToChat, peerUserData: value));
+          sharedPreferences.setString("peerUserData",
+              mapListToString(convertQuerySnapshotToList(value)));
+          emit(state.copyWith(status: LastMessagesStatus.navigateToChat));
         });
       } catch (e) {
         emit(state.copyWith(
@@ -67,8 +70,9 @@ class LastMessagesCubit extends Cubit<LastMessagesState> {
                 isEqualTo: clickedUser['messageSenderId'].toString())
             .get()
             .then((value) {
-          emit(state.copyWith(
-              status: LastMessagesStatus.navigateToChat, peerUserData: value));
+          sharedPreferences.setString("peerUserData",
+              mapListToString(convertQuerySnapshotToList(value)));
+          emit(state.copyWith(status: LastMessagesStatus.navigateToChat));
         });
       } catch (e) {
         emit(state.copyWith(

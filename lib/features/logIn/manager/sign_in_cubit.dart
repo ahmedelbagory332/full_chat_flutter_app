@@ -3,12 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:full_chat_application/features/logIn/manager/sign_in_state.dart';
 
 import '../../../core/utils/failures.dart';
-import '../data/repo/sign_in_repo_impl.dart';
+import '../data/repo/sign_in_repo.dart';
 
 class SigInCubit extends Cubit<SignInState> {
   SigInCubit(this.signInRepo, this.user) : super(SignInState.initial());
 
-  final SignInRepoImpl signInRepo;
+  final SignInRepo signInRepo;
   final FirebaseAuth user;
 
   User? getCurrentUser() {

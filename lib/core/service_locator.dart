@@ -12,6 +12,8 @@ import '../features/logIn/data/repo/sign_in_repo_impl.dart';
 final getIt = GetIt.instance;
 
 Future<void> setupServiceLocator() async {
+  await _initSharedPref();
+
   getIt.registerSingleton<ApiService>(ApiService(Dio()));
 
   getIt.registerLazySingleton(() => FirebaseAuth.instance);

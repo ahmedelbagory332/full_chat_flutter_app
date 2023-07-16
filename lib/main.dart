@@ -7,18 +7,21 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:full_chat_application/core/service_locator.dart';
+import 'package:full_chat_application/core/storage/shared_preferences.dart';
 import 'package:full_chat_application/features/chat_screen/chat_screen.dart';
 import 'package:full_chat_application/features/chat_screen/manager/chat_cubit.dart';
 import 'package:full_chat_application/features/home_screen/view/home_screen.dart';
 import 'package:full_chat_application/features/logIn/manager/sign_in_cubit.dart';
 import 'package:full_chat_application/features/splash_screen/view/splash_screen.dart';
-import 'package:full_chat_application/provider/shared_preferences.dart';
-import 'package:full_chat_application/screens/audio_call_screen.dart';
-import 'package:full_chat_application/screens/call_screen.dart';
-import 'package:full_chat_application/screens/video_call_screen.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/notifications/notifications.dart';
+import 'core/storage/firebase_helper/fireBaseHelper.dart';
 import 'core/utils/app_utils.dart';
+import 'features/call_screen/audio_call_screen.dart';
+import 'features/call_screen/call_screen.dart';
+import 'features/call_screen/video_call_screen.dart';
 import 'features/chat_screen/data/repo/chat_repo_impl.dart';
 import 'features/home_screen/data/repo/home_repo_impl.dart';
 import 'features/home_screen/manager/homeCubit/home_cubit.dart';
@@ -30,8 +33,6 @@ import 'features/register/data/repo/sign_up_repo_impl.dart';
 import 'features/register/manager/sign_up_cubit.dart';
 import 'features/register/view/register.dart';
 import 'features/splash_screen/manager/splash_screen_cubit.dart';
-import 'firebase_helper/fireBaseHelper.dart';
-import 'notifications/notifications.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,9 +63,7 @@ class _MyAppState extends State<MyApp> {
     if (!subscribedActionStream) {
       AwesomeNotifications().actionStream.listen((action) {
         if (action.buttonKeyPressed == "Answer") {
-          getCallType().then((value) {
-            Get.off(CallScreen(value));
-          });
+          Get.off(CallScreen(getCallType()));
         } else if (action.buttonKeyPressed == "Cancel") {
           FireBaseHelper().updateCallStatus(context, "false");
           cancelCall(context, "You cancel the call");
@@ -120,30 +119,21 @@ class _MyAppState extends State<MyApp> {
         BlocProvider(
             create: (context) => UsersCubit(
                   getIt.get<HomeRepoImpl>(),
+                  getIt.get<SharedPreferences>(),
                   getIt.get<FirebaseAuth>(),
                 )..getUsers()),
         BlocProvider(
             create: (context) => LastMessagesCubit(
                   getIt.get<HomeRepoImpl>(),
+                  getIt.get<SharedPreferences>(),
                   getIt.get<FirebaseAuth>(),
                 )..getLastMessages()),
         BlocProvider(
             create: (context) => ChatCubit(
-                  context.read<UsersCubit>().peerUserData == null
-                      ? context.read<LastMessagesCubit>().peerUserData!.docs[0]
-                      : context.read<UsersCubit>().peerUserData!.docs[0],
                   getIt.get<ChatRepoImpl>(),
+                  getIt.get<SharedPreferences>(),
                   getIt.get<FirebaseAuth>(),
-                )
-                  ..getMessages()
-                  ..getPeeredUserStatus(
-                      context.read<UsersCubit>().peerUserData == null
-                          ? context
-                              .read<LastMessagesCubit>()
-                              .peerUserData!
-                              .docs[0]["userId"]
-                          : context.read<UsersCubit>().peerUserData!.docs[0]
-                              ["userId"])),
+                )..getPeeredUserStatus()),
       ],
       child: GetMaterialApp(
         debugShowCheckedModeBanner: false,

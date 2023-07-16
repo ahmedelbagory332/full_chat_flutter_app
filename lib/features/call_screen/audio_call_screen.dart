@@ -5,15 +5,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:full_chat_application/core/storage/shared_preferences.dart';
 import 'package:full_chat_application/core/utils/app_utils.dart';
-import 'package:full_chat_application/firebase_helper/fireBaseHelper.dart';
-import 'package:full_chat_application/provider/shared_preferences.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
-import '../features/chat_screen/manager/chat_cubit.dart';
-import '../features/home_screen/view/home_screen.dart';
+import '../../core/storage/firebase_helper/fireBaseHelper.dart';
+import '../chat_screen/manager/chat_cubit.dart';
+import '../home_screen/view/home_screen.dart';
 
 class AudioCallScreen extends StatefulWidget {
   const AudioCallScreen({Key? key}) : super(key: key);
@@ -29,7 +29,6 @@ class _AudioCallScreenState extends State<AudioCallScreen> {
   late RtcEngine engine;
   late Timer timer;
   late FToast fToast;
-  String userName = "";
 
   Future<void> initPlatformState() async {
     if (defaultTargetPlatform == TargetPlatform.android) {
@@ -66,13 +65,11 @@ class _AudioCallScreenState extends State<AudioCallScreen> {
 
   void missedCall(String msg) {
     if (context.read<ChatCubit>().peerUserData["email"] == null) {
-      getEmail().then((value) {
-        context.read<ChatCubit>().notifyUser(
-            "${context.read<ChatCubit>().getCurrentUser()!.displayName}",
-            "${context.read<ChatCubit>().getCurrentUser()!.displayName} called you",
-            value,
-            context.read<ChatCubit>().getCurrentUser()!.email);
-      });
+      context.read<ChatCubit>().notifyUser(
+          "${context.read<ChatCubit>().getCurrentUser()!.displayName}",
+          "${context.read<ChatCubit>().getCurrentUser()!.displayName} called you",
+          getEmail(),
+          context.read<ChatCubit>().getCurrentUser()!.email);
     } else {
       context.read<ChatCubit>().notifyUser(
           "${context.read<ChatCubit>().getCurrentUser()!.displayName}",
@@ -91,13 +88,11 @@ class _AudioCallScreenState extends State<AudioCallScreen> {
 
   void endCall(String msg) {
     if (context.read<ChatCubit>().peerUserData["email"] == null) {
-      getEmail().then((value) {
-        context.read<ChatCubit>().notifyUser(
-            "${context.read<ChatCubit>().getCurrentUser()!.displayName}",
-            "${context.read<ChatCubit>().getCurrentUser()!.displayName} called you",
-            value,
-            context.read<ChatCubit>().getCurrentUser()!.email);
-      });
+      context.read<ChatCubit>().notifyUser(
+          "${context.read<ChatCubit>().getCurrentUser()!.displayName}",
+          "${context.read<ChatCubit>().getCurrentUser()!.displayName} called you",
+          getEmail(),
+          context.read<ChatCubit>().getCurrentUser()!.email);
     } else {
       context.read<ChatCubit>().notifyUser(
           "${context.read<ChatCubit>().getCurrentUser()!.displayName}",
@@ -128,18 +123,16 @@ class _AudioCallScreenState extends State<AudioCallScreen> {
     });
 
     if (context.read<ChatCubit>().peerUserData["userId"] == null) {
-      getId().then((value) {
-        FirebaseFirestore.instance
-            .collection("users")
-            .doc(value)
-            .snapshots()
-            .listen((event) {
-          if (event["chatWith"].toString() == "false") {
-            // mean that user end the call
-            Get.off(const HomeScreen());
-            buildShowSnackBar(context, "user end the call");
-          }
-        });
+      FirebaseFirestore.instance
+          .collection("users")
+          .doc(getId())
+          .snapshots()
+          .listen((event) {
+        if (event["chatWith"].toString() == "false") {
+          // mean that user end the call
+          Get.off(const HomeScreen());
+          buildShowSnackBar(context, "user end the call");
+        }
       });
     } else {
       FirebaseFirestore.instance
@@ -154,18 +147,7 @@ class _AudioCallScreenState extends State<AudioCallScreen> {
         }
       });
     }
-    // get peer user name
-    if (context.read<ChatCubit>().peerUserData["name"] == null) {
-      getName().then((value) {
-        setState(() {
-          userName = value;
-        });
-      });
-    } else {
-      setState(() {
-        userName = context.read<ChatCubit>().peerUserData["name"];
-      });
-    }
+
     super.initState();
   }
 
@@ -184,7 +166,8 @@ class _AudioCallScreenState extends State<AudioCallScreen> {
         body: Stack(
           children: [
             Center(
-              child: Text("Calling with $userName"),
+              child: Text(
+                  "Calling with ${context.read<ChatCubit>().peerUserData["name"] ?? getName()}"),
             ),
             Align(
               alignment: Alignment.bottomCenter,

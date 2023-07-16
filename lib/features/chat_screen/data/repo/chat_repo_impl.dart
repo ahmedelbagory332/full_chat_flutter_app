@@ -250,4 +250,39 @@ class ChatRepoImpl implements ChatRepo {
       return left(ServerFailure("An error occurred: ${e.toString()}"));
     }
   }
+
+  @override
+  Future<Either<Failure, ApiData>> notifyUserWithCall(
+      body, notifyTo, peerUserId, peeredName, callType) async {
+    try {
+      var formData = FormData.fromMap({
+        'title': "",
+        'message': body,
+        'email': notifyTo,
+        'peerUserId': peerUserId,
+        'peeredEmail': notifyTo,
+        'peeredName': peeredName,
+        'callType': callType,
+      });
+
+      var response = await apiService.post(
+          endPoint: 'bego/sendSinglePushForCalling.php', rawData: formData);
+
+      if (response.success) {
+        debugPrint("bego notifyUserWithCall: ${response.data}");
+        return right(response);
+      } else {
+        debugPrint("bego notifyUserWithCall: ${response.errorMessage}");
+        return left(ServerFailure(response.errorMessage));
+      }
+    } catch (e) {
+      if (e is DioError) {
+        debugPrint(
+            "bego notifyUserWithCall DioError: ${ServerFailure.fromDioError(e)}");
+        return left(ServerFailure.fromDioError(e));
+      }
+      debugPrint("bego notifyUserWithCall catch: ${e.toString()}");
+      return left(ServerFailure(e.toString()));
+    }
+  }
 }

@@ -3,11 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:full_chat_application/features/chat_screen/view/widget/message_compose.dart';
 import 'package:full_chat_application/features/chat_screen/view/widget/sub_title_app_bar.dart';
-import 'package:full_chat_application/features/home_screen/manager/lastMessagesCubit/last_message_cubit.dart';
-import 'package:full_chat_application/serverFunctions/server_functions.dart';
 import 'package:get/get.dart';
 
-import '../home_screen/manager/usersCubit/users_cubit.dart';
 import 'manager/chat_cubit.dart';
 import 'view/widget/messages_list.dart';
 
@@ -26,11 +23,14 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     context.read<ChatCubit>().updateUserStatus(
         "Online", context.read<ChatCubit>().getCurrentUser()!.uid);
+
     context.read<ChatCubit>().updatePeerDevice(
-          context.read<UsersCubit>().peerUserData == null
-              ? context.read<LastMessagesCubit>().peerUserData!.docs[0]["email"]
-              : context.read<UsersCubit>().peerUserData!.docs[0]["email"],
-        );
+        context.read<ChatCubit>().getPeerUserData()["userId"]);
+
+    context.read<ChatCubit>().peerUserChanged();
+
+    context.read<ChatCubit>().getMessages();
+
     super.initState();
   }
 
@@ -43,7 +43,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-
     _appProvider.updateUserStatus(
         FieldValue.serverTimestamp(), _appProvider.getCurrentUser()!.uid);
     _appProvider.updatePeerDevice("0");
@@ -71,12 +70,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       case AppLifecycleState.resumed:
         context.read<ChatCubit>().updateUserStatus(
             "Online", context.read<ChatCubit>().getCurrentUser()!.uid);
-        context.read<ChatCubit>().updatePeerDevice(
-              context.read<UsersCubit>().peerUserData == null
-                  ? context.read<LastMessagesCubit>().peerUserData!.docs[0]
-                      ["email"]
-                  : context.read<UsersCubit>().peerUserData!.docs[0]["email"],
-            );
+        context.read<ChatCubit>().updatePeerDevice("1");
         break;
     }
     super.didChangeAppLifecycleState(state);
@@ -95,72 +89,31 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                  context.read<UsersCubit>().peerUserData == null
-                      ? context.read<LastMessagesCubit>().peerUserData!.docs[0]
-                          ["name"]
-                      : context.read<UsersCubit>().peerUserData!.docs[0]
-                          ["name"],
+              Text(context.read<ChatCubit>().getPeerUserData()["name"],
                   style: const TextStyle(
                       fontSize: 18.5, fontWeight: FontWeight.bold)),
-              SubTitleAppBar(),
+              const SubTitleAppBar(),
             ],
           ),
           actions: [
             IconButton(
                 onPressed: () {
-                  notifyUserWithCall(
+                  context.read<ChatCubit>().notifyUserWithCall(
                       "Calling from ${context.read<ChatCubit>().getCurrentUser()!.displayName}",
-                      context.read<UsersCubit>().peerUserData == null
-                          ? context
-                              .read<LastMessagesCubit>()
-                              .peerUserData!
-                              .docs[0]["email"]
-                          : context.read<UsersCubit>().peerUserData!.docs[0]
-                              ["email"],
-                      context.read<UsersCubit>().peerUserData == null
-                          ? context
-                              .read<LastMessagesCubit>()
-                              .peerUserData!
-                              .docs[0]["userId"]
-                          : context.read<UsersCubit>().peerUserData!.docs[0]
-                              ["userId"],
-                      context.read<UsersCubit>().peerUserData == null
-                          ? context
-                              .read<LastMessagesCubit>()
-                              .peerUserData!
-                              .docs[0]["name"]
-                          : context.read<UsersCubit>().peerUserData!.docs[0]
-                              ["name"],
+                      context.read<ChatCubit>().getPeerUserData()["email"],
+                      context.read<ChatCubit>().getPeerUserData()["userId"],
+                      context.read<ChatCubit>().getPeerUserData()["name"],
                       "video");
                   Navigator.pushNamed(context, 'video_call');
                 },
                 icon: const Icon(Icons.videocam)),
             IconButton(
                 onPressed: () {
-                  notifyUserWithCall(
+                  context.read<ChatCubit>().notifyUserWithCall(
                       "Calling from ${context.read<ChatCubit>().getCurrentUser()!.displayName}",
-                      context.read<UsersCubit>().peerUserData == null
-                          ? context
-                              .read<LastMessagesCubit>()
-                              .peerUserData!
-                              .docs[0]["email"]
-                          : context.read<UsersCubit>().peerUserData!.docs[0]
-                              ["email"],
-                      context.read<UsersCubit>().peerUserData == null
-                          ? context
-                              .read<LastMessagesCubit>()
-                              .peerUserData!
-                              .docs[0]["userId"]
-                          : context.read<UsersCubit>().peerUserData!.docs[0]
-                              ["userId"],
-                      context.read<UsersCubit>().peerUserData == null
-                          ? context
-                              .read<LastMessagesCubit>()
-                              .peerUserData!
-                              .docs[0]["name"]
-                          : context.read<UsersCubit>().peerUserData!.docs[0]
-                              ["name"],
+                      context.read<ChatCubit>().getPeerUserData()["email"],
+                      context.read<ChatCubit>().getPeerUserData()["userId"],
+                      context.read<ChatCubit>().getPeerUserData()["name"],
                       "audio");
                   Navigator.pushNamed(context, 'audio_call');
                 },

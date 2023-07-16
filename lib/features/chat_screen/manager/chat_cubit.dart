@@ -8,58 +8,66 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_sound/public/flutter_sound_recorder.dart';
+import 'package:full_chat_application/core/utils/app_utils.dart';
 import 'package:full_chat_application/core/utils/failures.dart';
-import 'package:full_chat_application/notifications/notifications.dart';
 import 'package:mime/mime.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../data/repo/chat_repo_impl.dart';
+import '../../../core/notifications/notifications.dart';
+import '../data/repo/chat_repo.dart';
 import 'chat_state.dart';
 
 class ChatCubit extends Cubit<ChatState> {
-  ChatCubit(this.peerUserData, this.chatRepo, this.user)
-      : super(ChatState.initial()) {
-    chatIdChanged(getChatId(peerUserData["userId"]));
-  }
+  ChatCubit(this.chatRepo, this.sharedPreferences, this.user)
+      : super(ChatState.initial());
 
-  final ChatRepoImpl chatRepo;
+  final ChatRepo chatRepo;
   final FirebaseAuth user;
-  final QueryDocumentSnapshot<Map<String, dynamic>> peerUserData;
-  late StreamSubscription _peeredUserStatusSubscription;
-  late StreamSubscription _getMessagesSubscription;
+  final SharedPreferences sharedPreferences;
+
   final _recorder = FlutterSoundRecorder();
+
   void sendChatButtonChanged(bool value) {
     emit(state.copyWith(sendChatButton: value));
   }
 
   void isRecorderReadyChanged(bool value) {
-    emit(state.copyWith(isRecorderReady: value));
+    emit(state.copyWith(
+      isRecorderReady: value,
+    ));
   }
 
   void startVoiceMessageChanged(bool value) {
-    emit(state.copyWith(startVoiceMessage: value));
+    emit(state.copyWith(
+      startVoiceMessage: value,
+    ));
   }
 
-  void chatIdChanged(String value) {
-    emit(state.copyWith(chatId: value, status: ChatStatus.initial));
+  void peerUserChanged() {
+    getChatId(getPeerUserData()["userId"]);
+    debugPrint("begoa state.peeredUser ${getPeerUserData()["userId"]}");
   }
 
   bool get startVoiceMessage => state.startVoiceMessage;
   bool get sendChatButton => state.sendChatButton;
   bool get isRecorderReady => state.isRecorderReady;
+  QueryDocumentSnapshot<Map<String, dynamic>> get peerUserData =>
+      state.peeredUser!;
   FlutterSoundRecorder get recorder => _recorder;
 
   Future record() async {
     if (!state.isRecorderReady) return;
     await recorder.startRecorder(toFile: "voice.mp4");
+    recordTimer();
   }
 
   Future stop() async {
+    startVoiceMessageChanged(false);
     String voiceMessageName = "${DateTime.now().toString()}.mp4";
     if (!isRecorderReady) return;
     final path = await recorder.stopRecorder();
     final audioFile = File(path!);
     getReferenceFromStorage(audioFile, voiceMessageName);
-    uploadFile(voiceMessageName, "voice message", state.reference!);
   }
 
   void cancelRecord() {
@@ -73,10 +81,15 @@ class ChatCubit extends Cubit<ChatState> {
     await recorder.openRecorder();
     isRecorderReadyChanged(true);
     recorder.setSubscriptionDuration(const Duration(milliseconds: 500));
+    startVoiceMessageChanged(true);
   }
 
   User? getCurrentUser() {
     return user.currentUser;
+  }
+
+  Map<String, dynamic> getPeerUserData() {
+    return stringToMapList(sharedPreferences.getString("peerUserData")!)[0];
   }
 
   void updateUserStatus(userStatus, userId) async {
@@ -88,9 +101,9 @@ class ChatCubit extends Cubit<ChatState> {
     });
   }
 
-  void updatePeerDevice(peerUser) async {
-    var result =
-        await chatRepo.updatePeerDevice(user.currentUser!.email, peerUser);
+  void updatePeerDevice(String status) async {
+    var result = await chatRepo.updatePeerDevice(user.currentUser!.email,
+        status == "0" ? "0" : getPeerUserData()["email"]);
     result.fold((failure) {
       debugPrint("bego updatePeerDevice failure: ${failure.errMessage}");
     }, (success) {
@@ -100,15 +113,15 @@ class ChatCubit extends Cubit<ChatState> {
 
   @override
   Future<void> close() {
-    _peeredUserStatusSubscription.cancel();
-    _getMessagesSubscription.cancel();
     return super.close();
   }
 
-  String getChatId(peerUserId) {
-    return user.currentUser!.uid.hashCode <= peerUserId.hashCode
-        ? "${user.currentUser!.uid} - $peerUserId"
-        : "$peerUserId - ${user.currentUser!.uid}";
+  void getChatId(peerUserId) {
+    emit(state.copyWith(
+        chatId: user.currentUser!.uid.hashCode <= peerUserId.hashCode
+            ? "${user.currentUser!.uid} - $peerUserId"
+            : "$peerUserId - ${user.currentUser!.uid}"));
+    debugPrint("begoa chat id ${state.chatId}");
   }
 
   Future<void> sendMessage(
@@ -145,8 +158,8 @@ class ChatCubit extends Cubit<ChatState> {
         debugPrint("bego updateLastMessage failure: ${failure.errMessage}");
       }, (success) {
         debugPrint("bego updateLastMessage success: $success");
-        //getMessages
-        getMessages();
+        // //getMessages
+        // getMessages();
       });
     });
   }
@@ -160,28 +173,30 @@ class ChatCubit extends Cubit<ChatState> {
     });
   }
 
-  getPeeredUserStatus(userId) {
+  getPeeredUserStatus() {
     try {
-      emit(state.copyWith(
-          status: ChatStatus.gettingPeeredUser, peeredUser: peerUserData));
+      emit(state.copyWith(status: ChatStatus.gettingPeeredUser));
 
       FirebaseFirestore.instance
           .collection('users')
-          .where('userId', isEqualTo: userId)
+          .where('userId', isEqualTo: getPeerUserData()["userId"])
           .snapshots()
           .listen((event) {
         emit(state.copyWith(
             status: ChatStatus.peeredUser, peeredUser: event.docs[0]));
       });
     } catch (e) {
+      debugPrint("ChatStatus.peeredUserError ${e.toString()}");
+
       emit(state.copyWith(
           failure: ServerFailure("An error occurred: ${e.toString()}"),
           status: ChatStatus.peeredUserError));
     }
   }
 
-  getMessages() {
+  void getMessages() {
     try {
+      emit(state.copyWith(status: ChatStatus.gettingMessages));
       FirebaseFirestore.instance
           .collection('messages')
           .doc(state.chatId)
@@ -189,41 +204,49 @@ class ChatCubit extends Cubit<ChatState> {
           .orderBy("msgTime", descending: true)
           .snapshots()
           .listen((event) {
-        emit(state.copyWith(status: ChatStatus.getMessages, messages: event));
-        debugPrint("bego getMessages success: ${event.docs.length}");
+        List<Map<String, dynamic>> list = [];
+        for (var element in event.docs) {
+          list.add(element.data());
+        }
+        emit(state.copyWith(status: ChatStatus.getMessages, messages: list));
       });
     } catch (error) {
       emit(state.copyWith(
           failure: ServerFailure("An error occurred: ${error.toString()}"),
           status: ChatStatus.getMessagesError));
-      debugPrint("bego getMessages error: $error");
     }
   }
 
-  Future<void> getReferenceFromStorage(file, voiceMessageName) async {
+  Future<void> getReferenceFromStorage(file, String voiceMessageName) async {
     var getReferenceFromStorage = await chatRepo.getReferenceFromStorage(
         file, state.chatId, voiceMessageName);
     getReferenceFromStorage.fold((failure) {
       debugPrint("bego getReferenceFromStorage failure: ${failure.errMessage}");
     }, (reference) {
-      if (file.runtimeType == FilePickerResult) {
-        if (lookupMimeType(file.files.single.path.toString())!
-            .contains("video")) {
-          uploadFile("", "video", reference);
-        } else if (lookupMimeType(file.files.single.path.toString())!
-            .contains("application")) {
-          uploadFile(file.files.single.name, "document", reference);
-        } else if (lookupMimeType(file.files.single.path.toString())!
-            .contains("image")) {
-          uploadFile("", "image", reference);
-        } else if (lookupMimeType(file.files.single.path.toString())!
-            .contains("audio")) {
-          uploadFile(file.files.single.name, "audio", reference);
-        } else {
-          state.copyWith(status: ChatStatus.unsupported);
-        }
+      if (voiceMessageName.isNotEmpty) {
+        uploadFile(voiceMessageName, "voice message", reference);
       } else {
-        uploadFile("", "image", reference);
+        if (file.runtimeType == FilePickerResult) {
+          /// user upload file from attach button
+          if (lookupMimeType(file.files.single.path.toString())!
+              .contains("video")) {
+            uploadFile("", "video", reference);
+          } else if (lookupMimeType(file.files.single.path.toString())!
+              .contains("application")) {
+            uploadFile(file.files.single.name, "document", reference);
+          } else if (lookupMimeType(file.files.single.path.toString())!
+              .contains("image")) {
+            uploadFile("", "image", reference);
+          } else if (lookupMimeType(file.files.single.path.toString())!
+              .contains("audio")) {
+            uploadFile(file.files.single.name, "audio", reference);
+          } else {
+            state.copyWith(status: ChatStatus.unsupported);
+          }
+        } else {
+          /// user take photo from camera
+          uploadFile("", "image", reference);
+        }
       }
     });
   }
@@ -235,18 +258,19 @@ class ChatCubit extends Cubit<ChatState> {
     uploadTask.snapshotEvents.listen((event) {
       debugPrint("bego snapshotEvents event: ${event.totalBytes}");
 
-      uploadingNotification(fileType, peerUserData["name"], event.totalBytes,
-          event.bytesTransferred, true);
+      uploadingNotification(fileType, getPeerUserData()["name"],
+          event.totalBytes, event.bytesTransferred, true);
     });
 
     /// completed upload
     uploadTask.whenComplete(() => {
           /// show notification to user
-          uploadingNotification(fileType, peerUserData["name"], 0, 0, false),
+          uploadingNotification(
+              fileType, getPeerUserData()["name"], 0, 0, false),
 
           /// notify peer user
           notifyUser(getCurrentUser()!.displayName, "send to you $fileType",
-              peerUserData["email"], getCurrentUser()!.email),
+              getPeerUserData()["email"], getCurrentUser()!.email),
 
           /// upload file url to fireStore
           uploadTask.then((fileUrl) {
@@ -254,8 +278,8 @@ class ChatCubit extends Cubit<ChatState> {
               sendMessage(
                   chatId: state.chatId,
                   senderId: getCurrentUser()!.uid,
-                  receiverId: peerUserData["userId"],
-                  receiverUsername: peerUserData["name"],
+                  receiverId: getPeerUserData()["userId"],
+                  receiverUsername: getPeerUserData()["name"],
                   msgTime: FieldValue.serverTimestamp(),
                   msgType: fileType,
                   message: value,
@@ -275,7 +299,19 @@ class ChatCubit extends Cubit<ChatState> {
       String twoDigits(int n) => n.toString().padLeft(2, '0');
       final twoDigitsMinutes = twoDigits(duration.inMinutes.remainder(60));
       final twoDigitsSecond = twoDigits(duration.inSeconds.remainder(60));
-      state.copyWith(recordTimer: "$twoDigitsMinutes:$twoDigitsSecond");
+      emit(state.copyWith(recordTimer: "$twoDigitsMinutes:$twoDigitsSecond"));
+      debugPrint("begoa recordTimer ${state.recordTimer}");
+    });
+  }
+
+  void notifyUserWithCall(
+      body, notifyTo, peerUserId, peeredName, callType) async {
+    var result = await chatRepo.notifyUserWithCall(
+        body, notifyTo, peerUserId, peeredName, callType);
+    result.fold((failure) {
+      debugPrint("bego notifyUserWithCall failure: ${failure.errMessage}");
+    }, (success) {
+      debugPrint("bego notifyUserWithCall success: ${success.data}");
     });
   }
 }

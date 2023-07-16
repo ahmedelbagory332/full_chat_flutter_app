@@ -16,6 +16,8 @@ class Messages extends StatelessWidget {
     return BlocConsumer<ChatCubit, ChatState>(
       listener: (BuildContext context, state) {},
       builder: (BuildContext context, state) {
+        debugPrint("ChatStatus.Messages ${state.status}");
+
         if (state.status == ChatStatus.getMessagesError) {
           return const Text('Something went wrong try again');
         }
@@ -27,7 +29,7 @@ class Messages extends StatelessWidget {
         }
 
         if (state.status == ChatStatus.getMessages) {
-          return state.messages!.docs.isEmpty
+          return state.messages!.isEmpty
               ? const Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -37,79 +39,72 @@ class Messages extends StatelessWidget {
               : ListView.builder(
                   reverse: true,
                   shrinkWrap: true,
-                  itemCount: state.messages!.docs.length,
+                  itemCount: state.messages!.length,
                   itemBuilder: (context, index) {
                     if (context.read<ChatCubit>().getCurrentUser()!.uid ==
-                        state.messages!.docs[index]['senderId'].toString()) {
+                        state.messages![index]['senderId'].toString()) {
                       return InkWell(
                         onTap: () {
-                          if (state.messages!.docs[index]['msgType']
-                                      .toString() ==
+                          if (state.messages![index]['msgType'].toString() ==
                                   "document" ||
-                              state.messages!.docs[index]['msgType']
-                                      .toString() ==
+                              state.messages![index]['msgType'].toString() ==
+                                  "audio" ||
+                              state.messages![index]['msgType'].toString() ==
                                   "voice message") {
                             downloadFile(
                                 context,
-                                state.messages!.docs[index]['message']
-                                    .toString(),
-                                state.messages!.docs[index]['fileName']
-                                    .toString(),
-                                state.messages!.docs[index]['msgType']
-                                    .toString());
+                                state.messages![index]['message'].toString(),
+                                state.messages![index]['fileName'].toString(),
+                                state.messages![index]['msgType'].toString());
                           }
                         },
                         child: SenderMessageCard(
-                            state.messages!.docs[index]['fileName'].toString(),
-                            state.messages!.docs[index]['msgType'].toString(),
-                            state.messages!.docs[index]['message'].toString(),
-                            state.messages!.docs[index]['msgTime'] == null
+                            state.messages![index]['fileName'].toString(),
+                            state.messages![index]['msgType'].toString(),
+                            state.messages![index]['message'].toString(),
+                            state.messages![index]['msgTime'] == null
                                 ? DateFormat('dd-MM-yyyy hh:mm a').format(
                                     DateTime.parse(
                                         Timestamp.now().toDate().toString()))
                                 : DateFormat('dd-MM-yyyy hh:mm a').format(
-                                    DateTime.parse(state
-                                        .messages!.docs[index]['msgTime']
+                                    DateTime.parse(state.messages![index]
+                                            ['msgTime']
                                         .toDate()
                                         .toString()))),
                       );
                     } else {
                       return InkWell(
                         onTap: () {
-                          if (state.messages!.docs[index]['msgType']
-                                      .toString() ==
+                          if (state.messages![index]['msgType'].toString() ==
                                   "document" ||
-                              state.messages!.docs[index]['msgType']
-                                      .toString() ==
+                              state.messages![index]['msgType'].toString() ==
+                                  "audio" ||
+                              state.messages![index]['msgType'].toString() ==
                                   "voice message") {
                             downloadFile(
                                 context,
-                                state.messages!.docs[index]['message']
-                                    .toString(),
-                                state.messages!.docs[index]['fileName']
-                                    .toString(),
-                                state.messages!.docs[index]['msgType']
-                                    .toString());
+                                state.messages![index]['message'].toString(),
+                                state.messages![index]['fileName'].toString(),
+                                state.messages![index]['msgType'].toString());
                           }
                         },
                         child: ReceiverMessageCard(
-                            state.messages!.docs[index]['fileName'].toString(),
-                            state.messages!.docs[index]['msgType'].toString(),
-                            state.messages!.docs[index]['message'].toString(),
-                            state.messages!.docs[index]['msgTime'] == null
+                            state.messages![index]['fileName'].toString(),
+                            state.messages![index]['msgType'].toString(),
+                            state.messages![index]['message'].toString(),
+                            state.messages![index]['msgTime'] == null
                                 ? DateFormat('dd-MM-yyyy hh:mm a').format(
                                     DateTime.parse(
                                         Timestamp.now().toDate().toString()))
                                 : DateFormat('dd-MM-yyyy hh:mm a').format(
-                                    DateTime.parse(state
-                                        .messages!.docs[index]['msgTime']
+                                    DateTime.parse(state.messages![index]
+                                            ['msgTime']
                                         .toDate()
                                         .toString()))),
                       );
                     }
                   });
         } else {
-          context.read<ChatCubit>().getMessages();
           return Container();
         }
       },

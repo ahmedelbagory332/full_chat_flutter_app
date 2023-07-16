@@ -19,14 +19,13 @@ class ChatState {
   final ChatStatus status;
   final Failure failure;
   final QueryDocumentSnapshot<Map<String, dynamic>>? peeredUser;
-  final QuerySnapshot<Map<String, dynamic>>? messages;
+  final List<Map<String, dynamic>>? messages;
   final bool sendChatButton;
   final bool isRecorderReady;
   final bool startVoiceMessage;
   final String chatId;
   final String recordTimer;
   final UploadTask? reference;
-
   const ChatState({
     required this.status,
     required this.failure,
@@ -54,17 +53,18 @@ class ChatState {
         failure: Failure(""));
   }
 
-  ChatState copyWith(
-      {ChatStatus? status,
-      QueryDocumentSnapshot<Map<String, dynamic>>? peeredUser,
-      QuerySnapshot<Map<String, dynamic>>? messages,
-      bool? sendChatButton,
-      bool? isRecorderReady,
-      bool? startVoiceMessage,
-      String? chatId,
-      UploadTask? reference,
-      String? recordTimer,
-      Failure? failure}) {
+  ChatState copyWith({
+    ChatStatus? status,
+    QueryDocumentSnapshot<Map<String, dynamic>>? peeredUser,
+    List<Map<String, dynamic>>? messages,
+    bool? sendChatButton,
+    bool? isRecorderReady,
+    bool? startVoiceMessage,
+    String? chatId,
+    UploadTask? reference,
+    String? recordTimer,
+    Failure? failure,
+  }) {
     return ChatState(
         status: status ?? this.status,
         peeredUser: peeredUser ?? this.peeredUser,

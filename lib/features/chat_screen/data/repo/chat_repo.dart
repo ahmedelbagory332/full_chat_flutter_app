@@ -32,4 +32,7 @@ abstract class ChatRepo {
 
   Future<Either<Failure, UploadTask>> getReferenceFromStorage(
       file, chatId, voiceMessageName);
+
+  Future<Either<Failure, ApiData>> notifyUserWithCall(
+      body, notifyTo, peerUserId, peeredName, callType);
 }

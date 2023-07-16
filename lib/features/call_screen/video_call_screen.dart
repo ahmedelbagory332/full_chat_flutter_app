@@ -7,15 +7,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:full_chat_application/core/storage/shared_preferences.dart';
 import 'package:full_chat_application/core/utils/app_utils.dart';
 import 'package:full_chat_application/features/home_screen/view/home_screen.dart';
-import 'package:full_chat_application/provider/shared_preferences.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
-import '../features/chat_screen/manager/chat_cubit.dart';
-import '../firebase_helper/fireBaseHelper.dart';
+import '../../core/storage/firebase_helper/fireBaseHelper.dart';
+import '../chat_screen/manager/chat_cubit.dart';
 
 class VideoCallScreen extends StatefulWidget {
   const VideoCallScreen({Key? key}) : super(key: key);
@@ -69,13 +69,11 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   void missedCall(String msg) {
     if (context.read<ChatCubit>().peerUserData["email"] == null) {
-      getEmail().then((value) {
-        context.read<ChatCubit>().notifyUser(
-            "${context.read<ChatCubit>().getCurrentUser()!.displayName}",
-            "${context.read<ChatCubit>().getCurrentUser()!.displayName} called you",
-            value,
-            context.read<ChatCubit>().getCurrentUser()!.email);
-      });
+      context.read<ChatCubit>().notifyUser(
+          "${context.read<ChatCubit>().getCurrentUser()!.displayName}",
+          "${context.read<ChatCubit>().getCurrentUser()!.displayName} called you",
+          getEmail(),
+          context.read<ChatCubit>().getCurrentUser()!.email);
     } else {
       context.read<ChatCubit>().notifyUser(
           "${context.read<ChatCubit>().getCurrentUser()!.displayName}",
@@ -94,13 +92,11 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   void endCall(String msg) {
     if (context.read<ChatCubit>().peerUserData["email"] == null) {
-      getEmail().then((value) {
-        context.read<ChatCubit>().notifyUser(
-            "${context.read<ChatCubit>().getCurrentUser()!.displayName}",
-            "${context.read<ChatCubit>().getCurrentUser()!.displayName} called you",
-            value,
-            context.read<ChatCubit>().getCurrentUser()!.email);
-      });
+      context.read<ChatCubit>().notifyUser(
+          "${context.read<ChatCubit>().getCurrentUser()!.displayName}",
+          "${context.read<ChatCubit>().getCurrentUser()!.displayName} called you",
+          getEmail(),
+          context.read<ChatCubit>().getCurrentUser()!.email);
     } else {
       context.read<ChatCubit>().notifyUser(
           "${context.read<ChatCubit>().getCurrentUser()!.displayName}",
@@ -130,17 +126,15 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       missedCall("user didn't answer");
     });
     if (context.read<ChatCubit>().peerUserData["userId"] == null) {
-      getId().then((value) {
-        FirebaseFirestore.instance
-            .collection("users")
-            .doc(value)
-            .snapshots()
-            .listen((event) {
-          if (event["chatWith"].toString() == "false") {
-            Get.off(const HomeScreen());
-            buildShowSnackBar(context, "user end the call");
-          }
-        });
+      FirebaseFirestore.instance
+          .collection("users")
+          .doc(getId())
+          .snapshots()
+          .listen((event) {
+        if (event["chatWith"].toString() == "false") {
+          Get.off(const HomeScreen());
+          buildShowSnackBar(context, "user end the call");
+        }
       });
     } else {
       FirebaseFirestore.instance

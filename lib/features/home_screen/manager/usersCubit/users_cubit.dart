@@ -3,23 +3,27 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/utils/app_utils.dart';
 import '../../../../core/utils/failures.dart';
-import '../../data/repo/home_repo_impl.dart';
+import '../../data/repo/home_repo.dart';
 import 'users_state.dart';
 
 class UsersCubit extends Cubit<UsersState> {
-  UsersCubit(this.homeRepo, this.user) : super(UsersState.initial());
+  UsersCubit(this.homeRepo, this.sharedPreferences, this.user)
+      : super(UsersState.initial());
 
-  final HomeRepoImpl homeRepo;
+  final HomeRepo homeRepo;
   final FirebaseAuth user;
+  final SharedPreferences sharedPreferences;
+
   late StreamSubscription _usersSubscription;
 
   User? getCurrentUser() {
     return user.currentUser;
   }
-
-  QuerySnapshot<Map<String, dynamic>>? get peerUserData => state.peerUserData;
 
   void getUsers() {
     emit(state.copyWith(status: UsersStatus.loading));
@@ -46,8 +50,15 @@ class UsersCubit extends Cubit<UsersState> {
           .where('userId', isEqualTo: userId)
           .get()
           .then((value) {
-        emit(state.copyWith(
-            status: UsersStatus.navigateToChat, peerUserData: value));
+        debugPrint("bego usersClickListener1: ${value}");
+        debugPrint(
+            "bego usersClickListener2: ${convertQuerySnapshotToList(value)}");
+        debugPrint(
+            "bego usersClickListener3: ${mapListToString(convertQuerySnapshotToList(value))}");
+
+        sharedPreferences.setString(
+            "peerUserData", mapListToString(convertQuerySnapshotToList(value)));
+        emit(state.copyWith(status: UsersStatus.navigateToChat));
       });
     } catch (e) {
       emit(state.copyWith(

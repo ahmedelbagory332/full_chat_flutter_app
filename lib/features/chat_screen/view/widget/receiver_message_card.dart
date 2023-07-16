@@ -2,7 +2,7 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
-import '../../../../audio_file.dart';
+import '../../../../core/utils/audio_file.dart';
 
 class ReceiverMessageCard extends StatefulWidget {
   const ReceiverMessageCard(this.fileName, this.msgType, this.msg, this.time,
